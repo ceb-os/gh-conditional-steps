@@ -79,3 +79,16 @@ jobs:
         run: ls
       - name: Deploy
         run: echo "Deploying..."
+  report:
+    # without this report runs in parallel at the beginning of the workflow
+    # this means it will never start since no job has failed yet
+    # that is way it is dependant on the rest of the jobs
+    needs: [lint, deploy]
+    # using failure () condition at a job level instead of step level
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Output information
+        run: |
+          echo "something went wrong"
+          echo "${{ toJSON(github) }}"
