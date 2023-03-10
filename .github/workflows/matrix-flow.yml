@@ -6,6 +6,14 @@ jobs:
       matrix:
         node-version: [12, 14, 16]
         operating-system: [ubuntu-latest, windows-latest]
+        # we can also include one specific runner
+        include:
+          - node-version: 18
+            operating-system: ubuntu-latest
+        # and we can exclude a runner as well
+        exclude:
+          - node-version: 12
+            operating-system: windows-latest
     runs-on: ${{ matrix.operating-system }}
     steps:
       - name: Get code
