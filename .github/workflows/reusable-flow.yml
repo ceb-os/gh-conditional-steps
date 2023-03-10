@@ -1,0 +1,10 @@
+name: Reusable Deploy
+# this allows this workflow to be called from another workflow
+# in this case, use-reuse.yml in the deploy step
+on: workflow_call
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Output information
+        run: echo "Deploying and uploading..."

@@ -1,0 +1,94 @@
+name: Website Deployment
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get code
+        uses: actions/checkout@v3
+      - name: Cache dependencies
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Lint code
+        run: npm run lint
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get code
+        uses: actions/checkout@v3
+      - name: Cache dependencies
+        id: cache
+        uses: actions/cache@v3
+        with:
+          # we are now caching this path which contains all the dependencies installed
+          # by npm ci
+          path: node_modules
+          key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        # if there is not a cache-hit in the directory then we run this step 
+        # but if there is then skip it
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Test code
+        # id added to reference step later
+        id: run-test
+        run: npm run test
+      - name: Upload test report
+        # failure () will always return true if any previous step failed
+        # steps.id.outcome will have a string value of failure if the referenced step failed
+        # if [failure ()] AND [steps.id.outcome == 'failure'] THEN EXECUTE WORKFLOW  
+        if: failure () && steps.run-test.outcome == 'failure'
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-report
+          path: test.json
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get code
+        uses: actions/checkout@v3
+      - name: Cache dependencies
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Build website
+        id: build-website
+        run: npm run build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-files
+          path: dist
+  # here we are reusing our workflow by calling it
+  deploy:
+    needs: build
+    uses: ./.github/workflows/reusable-flow.yml
+  report:
+    # without this report runs in parallel at the beginning of the workflow
+    # this means it will never start since no job has failed yet
+    # that is way it is dependant on the rest of the jobs
+    needs: [lint, deploy]
+    # using failure () condition at a job level instead of step level
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Output information
+        run: |
+          echo "something went wrong"
+          echo "${{ toJSON(github) }}"
