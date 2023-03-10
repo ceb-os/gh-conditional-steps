@@ -79,6 +79,9 @@ jobs:
   deploy:
     needs: build
     uses: ./.github/workflows/reusable-flow.yml
+    # we provide the artifact name that we need for the workflow to work
+    with: 
+      artifact-name: dist-files
   report:
     # without this report runs in parallel at the beginning of the workflow
     # this means it will never start since no job has failed yet

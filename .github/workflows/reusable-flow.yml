@@ -1,10 +1,29 @@
 name: Reusable Deploy
 # this allows this workflow to be called from another workflow
 # in this case, use-reuse.yml in the deploy step
-on: workflow_call
+on: 
+  workflow_call:
+    inputs:
+      artifact-name:
+        description: The name of the deployable artifact files
+        # false means that input is not needed for the job to be called
+        # if true then the value is needed
+        required: false
+        # if we did not get an artifact name then dist is the value that should be used
+        default: dist
+        type: string
+
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Get code
+        uses: actions/download-artifact@v3
+        with:
+          # contains the inputs of a reusable or manually triggered workflow
+          name: ${{ inputs.artifact-name }}
+      - name: List files
+        run: ls
       - name: Output information
         run: echo "Deploying and uploading..."
