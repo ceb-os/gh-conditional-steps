@@ -82,6 +82,14 @@ jobs:
     # we provide the artifact name that we need for the workflow to work
     with: 
       artifact-name: dist-files
+  # job to show the output of the deploy job
+  print-deploy-result:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print deploy output
+        # using context to call the output of the deploy job
+        run: echo ${{ needs.deploy.outputs.result }}
   report:
     # without this report runs in parallel at the beginning of the workflow
     # this means it will never start since no job has failed yet

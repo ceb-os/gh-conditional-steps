@@ -12,10 +12,19 @@ on:
         # if we did not get an artifact name then dist is the value that should be used
         default: dist
         type: string
+    outputs:
+      result:
+        description: The result of the deployment operation
+        # using context object jobs to define the output
+        value: ${{ jobs.deploy.outputs.outcome }}
 
 
 jobs:
   deploy:
+    # creating the output of the deploy job
+    outputs:
+      # we call it outcome and we invoke the value with the proper context
+      outcome: ${{ steps.set-result.outputs.step-result }}
     runs-on: ubuntu-latest
     steps:
       - name: Get code
@@ -27,3 +36,8 @@ jobs:
         run: ls
       - name: Output information
         run: echo "Deploying and uploading..."
+      - name: Set result output
+        # setting the id of the step
+        id: set-result
+        # saving in the environment the value that we want to output
+        run: echo "step-result=success" >> $GITHUB_OUTPUT 
